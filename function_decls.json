@@ -27,12 +27,18 @@
 
   {
     "name": "scroll",
-    "description": "Scroll to a given element",
+    "description": "Scroll the web page in a specified direction by a modest amount or to page boundaries.",
     "params": [
       {
         "name": "direction",
         "type": "string",
-        "description": "Direction to scroll in",
+        "description": "The direction to scroll. Valid values are 'up', 'down', 'left', or 'right'. Use 'up' to scroll toward the top of the page, 'down' toward the bottom, etc.",
+        "required": true
+      },
+      {
+        "name": "bound",
+        "type": "boolean",
+        "description": "Controls scroll behavior: IMPORTANT - For commands like 'scroll down' or 'scroll up a bit', set this to FALSE to perform a modest scroll. ONLY set to TRUE when specifically asked to go to page extremes with commands like 'scroll to the bottom' or 'go to the top of the page'.",
         "required": true
       }
     ]

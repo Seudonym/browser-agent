@@ -25,25 +25,26 @@ class BrowserAgent:
         }
 
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-        # self.driver = webdriver.Chrome()
+        self.driver = webdriver.Chrome()
 
     def parse_command(self, command: str):
         response = self.client.models.generate_content(
-            model="gemini-1.5-flash",  
+            model="gemini-1.5-flash",
             contents=[{
                 "role": "user",
                 "parts": [{
                     "text": f"""Based on this command: "{command}", which of these functions should be called: {', '.join(self.command_types)}?
-                Return ONLY a JSON object with 'function' and 'params' keys. Make sure to use the description provided for each parameter to understand what to return. 
+                Return ONLY a JSON object with 'function' and 'params' keys. Make sure to use the description provided for each parameter to understand what to return.
                 For example, click should return the element's text which is to be clicked on. Make assumptions on the most probable text that is possible.
                 Here are some examples of what you can return:""" +
                     """'Click on the login button' -> {{"function": "click", "params": {{"element": "login"}}}}
                 'Navigate to google.com' -> {{"function": "navigate", "params": {{"url": "https://google.com"}}}}
-                'Scroll to the bottom of the page' -> {{"function": "scroll", "params": {{"direction": "down"}}}}
+                'Scroll to the bottom of the page' -> {{"function": "scroll", "params": {{"direction": "down", "bound": true}}}}
+                'Scroll down' -> {{"function": "scroll", "params": {{"direction": "down", "bound": false}}}}
                 'Search for 'python'' -> {{"function": "search", "params": {{"query": "python"}}}}"""
                 }]
             }],
-            config={"temperature": 0.1}
+            config={"temperature": 0.5}
         )
 
         response = response.candidates[0].content.parts[0].text
@@ -58,15 +59,37 @@ class BrowserAgent:
             print(f"Error: {e}")
             return None, None
 
-    def navigate(self, args):
+    def execute_command(self, command: str):
+        function, params = self.parse_command(command)
+        if function is None:
+            return
+
+        if function in self.command_types:
+            self.function_map[function](params)
+
+    def navigate(self, params):
+        url = params["url"]
         self.driver.get(url)
 
-    def click(self, args):
-        text = args["element"]
+    def click(self, params):
         pass
 
-    def scroll(self, args):
-        pass
+    def scroll(self, params):
+        direction = params["direction"]
+        bound = params["bound"]
 
-    def search(self, args):
+        if bound:
+            scroll_amount = int(self.driver.execute_script(
+                "return document.body.scrollHeight"))
+        else:
+            scroll_amount = int(self.driver.execute_script(
+                "return window.innerHeight"
+            )) // 1.1
+
+        if direction == "up":
+            scroll_amount = -scroll_amount
+
+        self.driver.execute_script(f"window.scrollBy(0, {scroll_amount})")
+
+    def search(self, params):
         pass

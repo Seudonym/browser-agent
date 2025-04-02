@@ -8,6 +8,7 @@ def main():
         command = input(">>> ")
         if command == "exit":
             break
+        agent.execute_command(command)
 
 
 if __name__ == "__main__":
