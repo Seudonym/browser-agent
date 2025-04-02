@@ -77,7 +77,17 @@ class BrowserAgent:
     def scroll(self, params):
         direction = params["direction"]
         bound = params["bound"]
+        scroll_amount = self._calc_scroll_amount(direction, bound)
+        for _ in range(100):
+            self.driver.execute_script(
+                f"window.scrollBy(0, {scroll_amount // 100})")
 
+    def search(self, params):
+        pass
+
+    # Helper functions
+    # =====================
+    def _calc_scroll_amount(self, direction, bound):
         if bound:
             scroll_amount = int(self.driver.execute_script(
                 "return document.body.scrollHeight"))
@@ -89,7 +99,4 @@ class BrowserAgent:
         if direction == "up":
             scroll_amount = -scroll_amount
 
-        self.driver.execute_script(f"window.scrollBy(0, {scroll_amount})")
-
-    def search(self, params):
-        pass
+        return scroll_amount
