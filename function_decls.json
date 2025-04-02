@@ -1,0 +1,53 @@
+[
+  {
+    "name": "navigate",
+    "description": "Navigate to a given URL",
+    "params": [
+      {
+        "name": "url",
+        "type": "string",
+        "description": "URL to navigate to",
+        "required": true
+      }
+    ]
+  },
+
+  {
+    "name": "click",
+    "description": "Click on an element",
+    "params": [
+      {
+        "name": "element",
+        "type": "string",
+        "description": "The link text of the element to click on",
+        "required": true
+      }
+    ]
+  },
+
+  {
+    "name": "scroll",
+    "description": "Scroll to a given element",
+    "params": [
+      {
+        "name": "direction",
+        "type": "string",
+        "description": "Direction to scroll in",
+        "required": true
+      }
+    ]
+  },
+
+  {
+    "name": "search",
+    "description": "Search for a given query",
+    "params": [
+      {
+        "name": "query",
+        "type": "string",
+        "description": "Query to search for",
+        "required": true
+      }
+    ]
+  }
+]
