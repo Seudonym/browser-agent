@@ -19,7 +19,7 @@
       {
         "name": "element",
         "type": "string",
-        "description": "The link text of the element to click on",
+        "description": "The link text of the element to click on. This can be a keyword from the element text.",
         "required": true
       }
     ]
@@ -52,6 +52,19 @@
         "name": "query",
         "type": "string",
         "description": "Query to search for",
+        "required": true
+      }
+    ]
+  },
+
+  {
+    "name": "input",
+    "description": "Input text into a field",
+    "params": [
+      {
+        "name": "field",
+        "type": "string",
+        "description": "The link text of the field to input into. This can be a keyword from the field text.",
         "required": true
       }
     ]

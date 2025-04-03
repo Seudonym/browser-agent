@@ -5,9 +5,11 @@ def main():
     agent = BrowserAgent()
 
     while True:
-        command = input(">>> ")
+        command = input("> ")
         if command == "exit":
             break
+        elif command.strip() == "":
+            continue
         agent.execute_command(command)
 
 
