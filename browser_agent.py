@@ -18,6 +18,7 @@ class BrowserAgent:
             "click",
             "scroll",
             "search",
+            "type",
         ]
 
         self.function_decls = json.load(open("function_decls.json"))
@@ -26,6 +27,7 @@ class BrowserAgent:
             "click": self.click,
             "scroll": self.scroll,
             "search": self.search,
+            "type": self.type,
         }
 
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -47,7 +49,8 @@ class BrowserAgent:
                 'Navigate to google.com' -> {[{"function": "navigate", "params": {{"url": "https://google.com"}}}]}
                 'Scroll to the bottom of the page' -> {[{"function": "scroll", "params": {{"direction": "down", "bound": true}}}]}
                 'Scroll down' -> {[{"function": "scroll", "params": {{"direction": "down", "bound": false}}}]}
-                'Go to google.com and search for 'python'' -> {[{"function": "navigate", "params": {{"url": "https://google.com"}}}, {"function": "search", "params": {{"query": "python"}}}]}"""
+                'Go to google.com and search for 'python'' -> {[{"function": "navigate", "params": {{"url": "https://google.com"}}}, {"function": "search", "params": {{"query": "python"}}}]}
+                'Type hello world into the username field' -> {[{"function": "type", "params": {{"text": "hello world", "field": "username"}}}]}"""
                 }]
             }],
             config={"temperature": 0.5}
@@ -61,7 +64,7 @@ class BrowserAgent:
             log_info(response)
             return response
         except Exception as e:
-            log_error(f"{e}")
+            log_error(f"Failed to parse the command with error: {e}")
             return None
 
     def execute_command(self, command: str):
@@ -104,6 +107,14 @@ class BrowserAgent:
         search_bar.send_keys(params["query"])
         search_bar.submit()
 
+    def type(self, params):
+        text = params["text"]
+        element = params["field"]
+        button = self._find_button_by_text(element)
+        button.click()
+        button.send_keys(text)
+        log_success("Typed on " + element)
+
     # Helper functions
     # =====================
     def _calc_scroll_amount(self, direction, bound):
@@ -141,10 +152,18 @@ class BrowserAgent:
         candidates = filter(filter_func, candidates)
         candidates = list(candidates)
         log_info(f"Found {len(candidates)} candidates")
-        if len(candidates) == 0:
-            raise Exception("Element not found")
-        else:
+        if len(candidates) != 0:
             return candidates[0]
+
+        # Find labels
+        labels = self.driver.find_elements(By.TAG_NAME, "label")
+        labels = list(filter(filter_func, labels))
+        log_info(f"Found {len(labels)} labels")
+        ids = [label.get_attribute("for") for label in labels]
+        ids = list(filter(lambda x: x is not None, ids))
+        ids = list(set(ids))
+        candidates = [self.driver.find_element(By.ID, id) for id in ids]
+        return candidates[0] if len(candidates) > 0 else None
 
     def _find_search_bar(self):
         search_bars = self.driver.find_elements(By.TAG_NAME, "input")

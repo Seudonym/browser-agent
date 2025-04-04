@@ -26,6 +26,25 @@
   },
 
   {
+    "name": "type",
+    "description": "Type text into a field",
+    "params": [
+      {
+        "name": "field",
+        "type": "string",
+        "description": "The link text of the field to type into. This can be a keyword from the field text.",
+        "required": true
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "description": "The text to type into the field.",
+        "required": true
+      }
+    ]
+  },
+
+  {
     "name": "scroll",
     "description": "Scroll the web page in a specified direction by a modest amount or to page boundaries.",
     "params": [

@@ -1,4 +1,5 @@
 from browser_agent import BrowserAgent
+from logging_utils import log_info, log_success, log_error
 
 
 def main():
@@ -10,7 +11,10 @@ def main():
             break
         elif command.strip() == "":
             continue
-        agent.execute_command(command)
+        try:
+            agent.execute_command(command)
+        except Exception as e:
+            log_error(f"Error executing command: {e}")
 
 
 if __name__ == "__main__":
