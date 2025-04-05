@@ -68,19 +68,23 @@ class BrowserAgent:
             return None
 
     def execute_command(self, command: str):
-        parsed = self.parse_command(command)
-        if parsed is None:
-            raise Exception("Failed to parse command")
+        try:
+            parsed = self.parse_command(command)
+            if parsed is None:
+                raise Exception("Failed to parse command")
 
-        for command in parsed:
-            function, params = command["function"], command["params"]
-            if function in self.command_types:
-                log_info(
-                    f"Executing command: {function} => {params}")
-                self.function_map[function](params)
-                self._sleep_till_page_load()
-            else:
-                raise Exception(f"Unknown command: {function}")
+            for command in parsed:
+                function, params = command["function"], command["params"]
+                if function in self.command_types:
+                    log_info(
+                        f"Executing command: {function} => {params}")
+                    self.function_map[function](params)
+                    self._sleep_till_page_load()
+                else:
+                    raise Exception(f"Unknown command: {function}")
+        except Exception as e:
+            log_error(f"Failed to execute: {e}")
+            return None
 
     def navigate(self, params):
         url = params["url"]
@@ -135,51 +139,72 @@ class BrowserAgent:
     def _find_button_by_text(self, text: str, fuzzy: bool = True):
         log_info(f"Finding button with text: {text}")
 
+        # def filter_func(x):
+        #     extracted_text = x.text
+        #     if extracted_text.strip() == "":
+        #         extracted_text = x.get_attribute("value") or ""
+        #     if fuzzy:
+        #         return text.lower() in extracted_text.lower()
+        #     else:
+        #         return text == extracted_text
+
         def filter_func(x):
-            extracted_text = x.text
-            if extracted_text.strip() == "":
-                extracted_text = x.get_attribute("value") or ""
-            if fuzzy:
-                return text.lower() in extracted_text.lower()
+        # Check the element's html to see if it contains the text
+            html = x.get_attribute("outerHTML")
+            if html is not None:
+                return text.lower() in html.lower() and x.is_displayed()
             else:
-                return text == extracted_text
+                return False
 
-        anchors = self.driver.find_elements(By.TAG_NAME, "a")
-        inputs = self.driver.find_elements(By.TAG_NAME, "input")
-        buttons = self.driver.find_elements(By.TAG_NAME, "button")
+        try:
+            anchors = self.driver.find_elements(By.TAG_NAME, "a")
+            inputs = self.driver.find_elements(By.TAG_NAME, "input")
+            buttons = self.driver.find_elements(By.TAG_NAME, "button")
 
-        candidates = anchors + inputs + buttons
-        candidates = filter(filter_func, candidates)
-        candidates = list(candidates)
-        log_info(f"Found {len(candidates)} candidates")
-        if len(candidates) != 0:
-            return candidates[0]
+            candidates = anchors + inputs + buttons
+            candidates = filter(filter_func, candidates)
+            candidates = list(candidates)
+            log_info(f"Found {len(candidates)} candidates")
+            if len(candidates) != 0:
+                return candidates[0]
 
-        # Find labels
-        labels = self.driver.find_elements(By.TAG_NAME, "label")
-        labels = list(filter(filter_func, labels))
-        log_info(f"Found {len(labels)} labels")
-        ids = [label.get_attribute("for") for label in labels]
-        ids = list(filter(lambda x: x is not None, ids))
-        ids = list(set(ids))
-        candidates = [self.driver.find_element(By.ID, id) for id in ids]
-        return candidates[0] if len(candidates) > 0 else None
+            # Find labels
+            labels = self.driver.find_elements(By.TAG_NAME, "label")
+            labels = list(filter(filter_func, labels))
+            log_info(f"Found {len(labels)} labels")
+            ids = [label.get_attribute("for") for label in labels]
+            ids = list(filter(lambda x: x is not None, ids))
+            ids = list(set(ids))
+            candidates = [self.driver.find_element(By.ID, id) for id in ids]
+
+            if len(candidates) == 0:
+                log_error(f"No button found with text: {text}")
+                return None
+            else:
+                return candidates[0]
+        except Exception as e:
+            log_error(f"Error finding button with text '{text}': {str(e)}")
+            return None
 
     def _find_search_bar(self):
-        search_bars = self.driver.find_elements(By.TAG_NAME, "input")
-        search_bars = list(filter(lambda x: x.get_attribute(
-            "type") == "text", search_bars))
+        try:
+            search_bars = self.driver.find_elements(By.TAG_NAME, "input")
+            search_bars = list(filter(lambda x: x.get_attribute(
+                "type") == "text", search_bars))
 
-        search_bars = search_bars + \
-            self.driver.find_elements(By.TAG_NAME, "textarea")
-        search_bars = list(filter(
-            lambda x: "search" in x.accessible_name.lower(), search_bars))
+            search_bars = search_bars + \
+                self.driver.find_elements(By.TAG_NAME, "textarea")
+            search_bars = list(filter(
+                lambda x: "search" in x.accessible_name.lower(), search_bars))
 
-        log_info(f"Found {len(search_bars)} search bars")
-        if len(search_bars) == 0:
-            raise Exception("Search bar not found")
-        else:
-            return search_bars[0]
+            log_info(f"Found {len(search_bars)} search bars")
+            if len(search_bars) == 0:
+                raise Exception("Search bar not found")
+            else:
+                return search_bars[0]
+        except Exception as e:
+            log_error(f"Error finding search bar: {str(e)}")
+            return None
 
     def _sleep_till_page_load(self):
         log_info(f"Waiting for page to load...")
